@@ -1,3 +1,7 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Datalogger, SensorModel, Sensor
+
+admin.register(Datalogger)
+admin.register(SensorModel)
+admin.register(Sensor)

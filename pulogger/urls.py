@@ -19,5 +19,6 @@ from django.urls import include, path
 from . import views
 
 urlpatterns = [
+    path('submitdatum/', views.submitdatum, name='submitdatum'),
     path('', views.index, name='index')
 ]

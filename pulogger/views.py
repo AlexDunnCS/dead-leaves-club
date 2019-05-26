@@ -53,7 +53,7 @@ def submitdatum(request):
     except ObjectDoesNotExist:
         context = {
             'success': False,
-            'response': 'Error: No such device, or no such sensor_name attached to device.'
+            'response': 'Error: No such device, or no such sensor named {} attached to device.'.format(sensor_name)
 
         }
     except DataTypeMismatchError as err:

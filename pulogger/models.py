@@ -3,24 +3,22 @@ from django.db import models
 
 class Datalogger(models.Model):
     device_name = models.CharField(max_length=64)
-    description = models.CharField(max_length=64)
-    temperature_sensor_count = models.SmallIntegerField()
-    humidity_sensor_count = models.SmallIntegerField()
-    up_since = models.DateTimeField('uninterrupted since')
-    last_transmission = models.DateTimeField('last transmission received')
+    description = models.CharField(max_length=64, blank=True)
+    sensor_count = models.SmallIntegerField(default=1)
+    up_since = models.DateTimeField('uninterrupted since', null=True, blank=True)
+    last_transmission = models.DateTimeField('last transmission received', null=True, blank=True)
 
     def __str__(self):
-        return '{} ({}) - {}temp, {}hum, up since {}, last xmit {}'.format(self.device_name, self.description,
-                                                                          self.temperature_sensor_count,
-                                                                          self.humidity_sensor_count,
+        return '{} ({}) - {} sensors, up since {}, last xmit {}'.format(self.device_name, self.description,
+                                                                          self.sensor_count,
                                                                           self.up_since, self.last_transmission)
 
 
 class SensorModel(models.Model):
     type = models.CharField(max_length=16)
-    description = models.CharField(max_length=64)
-    has_temperature = models.BooleanField()
-    has_humidity = models.BooleanField()
+    description = models.CharField(max_length=64, blank=True)
+    has_temperature = models.BooleanField(default=False)
+    has_humidity = models.BooleanField(default=False)
 
     def __str__(self):
         sensors = []
@@ -37,7 +35,7 @@ class SensorModel(models.Model):
 class Sensor(models.Model):
     datalogger = models.ForeignKey(Datalogger, on_delete=models.CASCADE)
     type = models.ForeignKey(SensorModel, on_delete=models.PROTECT)
-    description = models.CharField(max_length=64)
+    description = models.CharField(max_length=64, blank=True)
 
     def __str__(self):
         return '{} ({}) - attached to {}'.format(self.type, self.description, self.datalogger)

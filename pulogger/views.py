@@ -9,6 +9,29 @@ class DataTypeMismatchError(Exception):
     def __init__(self, message):
         self.message = message
 
+def prepare_data_for_gchart(column_labels, column_types, data):
+    column_count = len(data[0])
+    # check that column count is correct for all arguments
+    assert (len(column_labels) == column_count)
+    assert (len(column_types) == column_count)
+
+    column_defs = '"cols": [\n'
+    for idx in range(0, column_count):
+        column_defs += '{{"id":"","label":"{}","pattern":"","type":"{}"}},\n'.format(column_labels[idx], column_types[idx])
+    column_defs += ']'  # todo: remove final comma for browser compatibility, remove debug linebreak
+
+    row_defs = '"rows": [\n'
+    for datum in data:
+        row_defs += '{"c":[\n'
+        for idx in range(0, column_count):
+            row_defs +='{{"v":"{}","f":null}},\n'.format(datum[idx]) # todo: remove final comma for browser compatibility, remove debug linebreak
+        row_defs += ']},\n'
+    row_defs += ']'
+
+    json = '{' + column_defs + ',\n' + row_defs + '}'
+
+    return json
+
 
 def simpleview(request):
     device_name = request.GET['device']
@@ -38,7 +61,14 @@ def simpleview(request):
             data_idx += 1
         data.append(tuple(row_list))
 
+    column_labels = ['Time']
+    column_types = ["datetime"]
+    for sensor in sensors:
+        column_labels.append(sensor.sensor_name)
+        column_types.append("number")
 
+    gchart_json = prepare_data_for_gchart(column_labels, column_types, data)
+    print(gchart_json)
 
 
 
@@ -46,7 +76,7 @@ def simpleview(request):
         'device': device_name,
         'sensor_count': sensor_count,
         'sensor_indices': sensor_indices,
-        'data': data,
+        'gchart_json': gchart_json,
     }
 
     return render(request, 'pulogger/simpleTimeSeriesView.html', context)

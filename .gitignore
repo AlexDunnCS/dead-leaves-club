@@ -1,2 +1,4 @@
 .idea/
 venv/
+
+*/migrations/0*.py

@@ -10,6 +10,19 @@ class DataTypeMismatchError(Exception):
         self.message = message
 
 
+def simpleview(request):
+    device = request.GET['device']
+
+    data = SensorDatum.objects.filter(sensor__datalogger__device_name=device)
+
+    context = {
+        'device': device,
+        'data': data,
+    }
+
+    return render(request, 'pulogger/simpleTimeSeriesView.html', context)
+
+
 def submitdatum(request):
     device = request.GET['device']
     sensor_name = request.GET['sensor']

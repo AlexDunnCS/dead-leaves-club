@@ -66,5 +66,5 @@ class SensorDatum(models.Model):
     def __str__(self):
         return '{}: {} ({}, {}, submitted at {} from {} )'.format(self.type.description, self.value,
                                                                   self.sensor.datalogger.device_name,
-                                                                  self.sensor.description, self.timestamp,
+                                                                  self.sensor.sensor_name, self.timestamp,
                                                                   self.submission_ip)

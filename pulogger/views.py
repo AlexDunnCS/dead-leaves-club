@@ -11,12 +11,41 @@ class DataTypeMismatchError(Exception):
 
 
 def simpleview(request):
-    device = request.GET['device']
+    device_name = request.GET['device']
+    device = Datalogger.objects.get(device_name=device_name)
 
-    data = SensorDatum.objects.filter(sensor__datalogger__device_name=device)
+    sensors = Sensor.objects.filter(datalogger=device).order_by('pk')
+    sensor_count = len(sensors)  # should be no worse than count() since already-evaluated and cached.  todo: confirm
+
+    #assign each sensor an indice for the tuples (zero is used for time/x-axis)
+    sensor_indices = {}
+    for idx, sensor in enumerate(sensors, start=1):
+        sensor_indices.update({sensor.sensor_name:idx})
+
+    # process data into timestamp-grouped tuples accessible by sensor-index ([0] is timestamp)
+    raw_data = SensorDatum.objects.filter(sensor__datalogger__device_name=device_name).order_by('timestamp', 'sensor')
+    data = []
+    data_idx = 0
+
+    while data_idx < len(raw_data):
+        row_list = [raw_data[data_idx].timestamp]
+        row_list.extend([None]*sensor_count)
+        row_idx = 1
+
+        while data_idx < len(raw_data) and raw_data[data_idx].timestamp == row_list[0]:
+            row_idx = sensor_indices.get(raw_data[data_idx].sensor.sensor_name)
+            row_list[row_idx] = raw_data[data_idx].value
+            data_idx += 1
+        data.append(tuple(row_list))
+
+
+
+
 
     context = {
-        'device': device,
+        'device': device_name,
+        'sensor_count': sensor_count,
+        'sensor_indices': sensor_indices,
         'data': data,
     }
 

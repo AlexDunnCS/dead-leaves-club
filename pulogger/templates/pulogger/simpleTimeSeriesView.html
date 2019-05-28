@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Simple Visualisation for {{ device }}</title>
+{% extends 'global/site-template.html' %}
 
+{% block html_title %}Simple Visualisation for {{ device }}{% endblock %}
+
+{% block head_scripts %}
      <!--Load the AJAX API-->
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
@@ -34,8 +33,8 @@
             chart.draw(data, options);
         }
     </script>
-</head>
-<body>
+{% endblock %}
+
+{% block page_content %}
     <div id="chart_div"></div>
-</body>
-</html>
+{% endblock %}

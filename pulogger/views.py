@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.shortcuts import render, get_object_or_404
 from datetime import datetime
+from math import floor
 
 from .models import Datalogger, SensorModel, Sensor, DatumType, SensorModelDatumType, SensorDatum
 
@@ -8,6 +9,20 @@ from .models import Datalogger, SensorModel, Sensor, DatumType, SensorModelDatum
 class DataTypeMismatchError(Exception):
     def __init__(self, message):
         self.message = message
+
+
+def get_gchart_datetime_literal(pyDatetime):
+    literal = 'Date({}, {}, {}, {}, {}, {}, {})'.format(
+        pyDatetime.year,
+        (pyDatetime.month - 1),  # js dates are zero-indexed
+        pyDatetime.day,
+        pyDatetime.hour,
+        pyDatetime.minute,
+        pyDatetime.second,
+        floor(pyDatetime.microsecond / 1000)  # constructor requests milliseconds
+    )
+
+    return literal
 
 def prepare_data_for_gchart(column_labels, column_types, data):
     column_count = len(data[0])
@@ -17,18 +32,19 @@ def prepare_data_for_gchart(column_labels, column_types, data):
 
     column_defs = '"cols": [\n'
     for idx in range(0, column_count):
-        column_defs += '{{"id":"","label":"{}","pattern":"","type":"{}"}},\n'.format(column_labels[idx], column_types[idx])
-    column_defs += ']'  # todo: remove final comma for browser compatibility, remove debug linebreak
+        column_defs += '{{id: "", label: "{}", pattern: "", type: "{}"}}{}\n'.format(column_labels[idx], column_types[idx], ',' if idx < column_count-1 else '')
+    column_defs += ']'  # todo: remove debug linebreak
 
-    row_defs = '"rows": [\n'
-    for datum in data:
-        row_defs += '{"c":[\n'
+    row_defs = 'rows: [\n'
+    for data_idx, datum in enumerate(data):
+        row_defs += '{c: ['
         for idx in range(0, column_count):
-            row_defs +='{{"v":"{}","f":null}},\n'.format(datum[idx]) # todo: remove final comma for browser compatibility, remove debug linebreak
-        row_defs += ']},\n'
+            datum_value = get_gchart_datetime_literal(datum[idx]) if column_types[idx] == 'datetime' else '{}'.format(datum[idx])
+            row_defs +='{{v: "{}", f: null}}{}'.format(datum_value, ', ' if idx < column_count-1 else '') # todo: remove debug linebreak
+        row_defs += ']}}{}\n'.format(',' if data_idx < len(data)-1 else '')
     row_defs += ']'
 
-    json = '{' + column_defs + ',\n' + row_defs + '}'
+    json = '{' + column_defs + ',\n\n' + row_defs + '}'
 
     return json
 

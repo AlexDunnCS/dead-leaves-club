@@ -48,12 +48,8 @@ def prepare_data_for_gchart(column_labels, column_types, data):
 
     return json
 
-def print_elapsed_time(ref_datetime, description):
-    print('{} (took {}ms)'.format(description, floor((datetime.now()-ref_datetime).microseconds/1000)))
-    return datetime.now()
 
 def simpleview(request):
-    time_marker = datetime.now()
     device_name = request.GET['device']
     device = Datalogger.objects.get(device_name=device_name)
 
@@ -65,14 +61,10 @@ def simpleview(request):
     for idx, sensor in enumerate(sensors, start=1):
         sensor_indices.update({sensor.sensor_name:idx})
 
-    time_marker = print_elapsed_time(time_marker, 'basic gets')
-
     # process data into timestamp-grouped tuples accessible by sensor-index ([0] is timestamp)
     raw_data = SensorDatum.objects.filter(sensor__datalogger__device_name=device_name).order_by('timestamp', 'sensor')
     data = []
     data_idx = 0
-
-    time_marker = print_elapsed_time(time_marker, 'queried data')
 
     while data_idx < len(raw_data):
         data.append([raw_data[data_idx].timestamp])  # create new row, containing timestamp
@@ -80,11 +72,9 @@ def simpleview(request):
         row_idx = 1
 
         while data_idx < len(raw_data) and raw_data[data_idx].timestamp == data[-1][0]:
-            row_idx = sensor_indices.get('sensor1')  # raw_data[data_idx].sensor.sensor_name)
+            row_idx = sensor_indices.get(raw_data[data_idx].sensor_name)
             data[-1][row_idx] = raw_data[data_idx].value
             data_idx += 1
-
-    time_marker = print_elapsed_time(time_marker, 'split data by sensor')
 
     column_labels = ['Time']
     column_types = ["datetime"]
@@ -92,13 +82,7 @@ def simpleview(request):
         column_labels.append(sensor.sensor_name)
         column_types.append("number")
 
-    time_marker = print_elapsed_time(time_marker, 'prepared column labels/types')
-
     gchart_json = prepare_data_for_gchart(column_labels, column_types, data)
-
-
-    time_marker = print_elapsed_time(time_marker, 'prepared json')
-
 
     context = {
         'device': device_name,
@@ -106,8 +90,6 @@ def simpleview(request):
         'sensor_indices': sensor_indices,
         'gchart_json': gchart_json,
     }
-
-    time_marker = print_elapsed_time(time_marker, 'created context')
 
     return render(request, 'pulogger/simpleTimeSeriesView.html', context)
 

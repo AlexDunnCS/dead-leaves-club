@@ -75,15 +75,14 @@ def simpleview(request):
     time_marker = print_elapsed_time(time_marker, 'queried data')
 
     while data_idx < len(raw_data):
-        row_list = [raw_data[data_idx].timestamp]
-        row_list.extend([None]*sensor_count)
+        data.append([raw_data[data_idx].timestamp])  # create new row, containing timestamp
+        data[-1].extend([None] * sensor_count)  # append None placeholders to new row
         row_idx = 1
 
-        while data_idx < len(raw_data) and raw_data[data_idx].timestamp == row_list[0]:
-            row_idx = sensor_indices.get(raw_data[data_idx].sensor.sensor_name)
-            row_list[row_idx] = raw_data[data_idx].value
+        while data_idx < len(raw_data) and raw_data[data_idx].timestamp == data[-1][0]:
+            row_idx = sensor_indices.get('sensor1')  # raw_data[data_idx].sensor.sensor_name)
+            data[-1][row_idx] = raw_data[data_idx].value
             data_idx += 1
-        data.append(tuple(row_list))
 
     time_marker = print_elapsed_time(time_marker, 'split data by sensor')
 

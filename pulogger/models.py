@@ -42,6 +42,7 @@ class Sensor(models.Model):
     def __str__(self):
         return '{} ({}) - {} attached to {}'.format(self.sensor_name, self.description, self.type, self.datalogger)
 
+
 class DatumType(models.Model):
     description = models.CharField(max_length=16)
 
@@ -56,8 +57,10 @@ class SensorModelDatumType(models.Model):
     def __str__(self):
         return '{} records {}'.format(self.sensor, self.datum_type)
 
+
 class SensorDatum(models.Model):
     sensor = models.ForeignKey(Sensor, on_delete=models.CASCADE)
+    sensor_name = models.CharField(max_length=16)
     submission_ip = models.GenericIPAddressField()
     timestamp = models.DateTimeField()
     type = models.ForeignKey(DatumType, on_delete=models.PROTECT)
@@ -68,3 +71,7 @@ class SensorDatum(models.Model):
                                                                   self.sensor.datalogger.device_name,
                                                                   self.sensor.sensor_name, self.timestamp,
                                                                   self.submission_ip)
+
+    def save(self, *args, **kwargs):
+        self.sensor_name = self.sensor.sensor_name  # for fast retrieval in chart views
+        super().save(*args, **kwargs)

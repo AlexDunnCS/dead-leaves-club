@@ -12,8 +12,8 @@ def generate_passcode():
     return passcode
 
 class Datalogger(models.Model):
-    device_name = models.CharField(max_length=64)
-    description = models.CharField(max_length=64, blank=True)
+    device_name = models.CharField(db_index=True, max_length=64)
+    description = models.CharField(db_index=True, max_length=64, blank=True)
     passcode = models.CharField(max_length=PASSCODE_LENGTH)
     sensor_count = models.SmallIntegerField(default=1)
     up_since = models.DateTimeField('uninterrupted since', null=True, blank=True)
@@ -26,8 +26,8 @@ class Datalogger(models.Model):
 
 
 class SensorModel(models.Model):
-    type = models.CharField(max_length=16)
-    description = models.CharField(max_length=64, blank=True)
+    type = models.CharField(db_index=True, max_length=16)
+    description = models.CharField(db_index=True, max_length=64, blank=True)
 
     def __str__(self):
         return '{} ({})'.format(self.type, self.description,)
@@ -36,15 +36,15 @@ class SensorModel(models.Model):
 class Sensor(models.Model):
     datalogger = models.ForeignKey(Datalogger, on_delete=models.CASCADE)
     type = models.ForeignKey(SensorModel, on_delete=models.PROTECT)
-    sensor_name = models.CharField(max_length=16)
-    description = models.CharField(max_length=64, blank=True)
+    sensor_name = models.CharField(db_index=True, max_length=16)
+    description = models.CharField(db_index=True, max_length=64, blank=True)
 
     def __str__(self):
         return '{} ({}) - {} attached to {}'.format(self.sensor_name, self.description, self.type, self.datalogger)
 
 
 class DatumType(models.Model):
-    description = models.CharField(max_length=16)
+    description = models.CharField(db_index=True, max_length=16)
 
     def __str__(self):
         return '{}'.format(self.description)
@@ -60,7 +60,7 @@ class SensorModelDatumType(models.Model):
 
 class SensorDatum(models.Model):
     sensor = models.ForeignKey(Sensor, on_delete=models.CASCADE)
-    sensor_name = models.CharField(max_length=16)
+    sensor_name = models.CharField(db_index=True, max_length=16)
     submission_ip = models.GenericIPAddressField()
     timestamp = models.DateTimeField()
     type = models.ForeignKey(DatumType, on_delete=models.PROTECT)

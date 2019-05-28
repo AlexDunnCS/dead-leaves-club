@@ -60,7 +60,7 @@ class SensorModelDatumType(models.Model):
 
 class SensorDatum(models.Model):
     sensor = models.ForeignKey(Sensor, on_delete=models.CASCADE)
-    sensor_name = models.CharField(db_index=True, max_length=16)
+    sensor_name = models.CharField(db_index=True, max_length=16, default='placeholder')
     submission_ip = models.GenericIPAddressField()
     timestamp = models.DateTimeField()
     type = models.ForeignKey(DatumType, on_delete=models.PROTECT)

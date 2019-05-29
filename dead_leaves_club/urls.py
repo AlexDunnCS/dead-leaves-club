@@ -18,7 +18,7 @@ from django.urls import include, path
 
 urlpatterns = [
     path('', include('pulogger.urls')),
-    path('pulogger/', include('pulogger.urls')),
+    path('pulogger/', include('pulogger.urls', namespace='pulogger')),
     path('secondary/', include('secondaryApp.urls')),
     path('admin/', admin.site.urls)
 ]

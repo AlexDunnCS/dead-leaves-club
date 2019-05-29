@@ -18,6 +18,8 @@ from django.urls import include, path
 
 from . import views
 
+app_name = 'pulogger'
+
 urlpatterns = [
     path('simpleview/', views.simpleview, name='simpleview'),
     path('submitdatum/', views.submitdatum, name='submitdatum'),

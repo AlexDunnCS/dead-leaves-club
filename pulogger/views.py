@@ -112,19 +112,17 @@ def submitdatum(request):
     try:
         # Check that a valid sensor exists for the parameters provided, else throw exception
         sensor = Sensor.objects.get(
-                sensor_name=sensor_name,
-                datalogger__device_name=device
+            name=sensor_name,
+            datalogger__device_name=device,
+            datum_type__description=datum_type
         )
 
-        if not SensorModelDatumType.objects.filter(sensor__type=sensor.type.type, datum_type__description=datum_type).exists():
-            raise DataTypeMismatchError('Sensor type {} cannot measure {}.'.format(sensor.type.type, datum_type))
-
         new_datum = SensorDatum(
+            sensor=sensor,
             submission_ip=submission_ip,
             timestamp=datetime.now(),
-            value=datum_value,
-            sensor_id=sensor.pk,
-            type_id=DatumType.objects.get(description=datum_type).pk,
+            type=sensor.datum_type,
+            value=datum_value
         )
 
         new_datum.full_clean()
@@ -143,8 +141,9 @@ def submitdatum(request):
     except ObjectDoesNotExist:
         context = {
             'success': False,
-            'response': 'Error: No such device, or no such sensor named {} attached to device.'.format(sensor_name)
-
+            'response': 'Error: No such device, '
+                        'no such sensor named {} attached to device, '
+                        'or sensor cannot measure {}.'.format(sensor_name, datum_type)
         }
     except DataTypeMismatchError as err:
         context = {

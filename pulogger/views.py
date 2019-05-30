@@ -58,9 +58,9 @@ def simpleview(request):
     device_name = request.GET['device']
     device = Datalogger.objects.get(device_name=device_name)
 
-    sensors = Sensor.objects.filter(datalogger=device).order_by('pk').select_related('type')
+    sensors = Sensor.objects.filter(datalogger=device).order_by('pk').select_related('model')
     sensor_count = len(sensors)  # should be no worse than count() since already-evaluated and cached.  todo: confirm
-    sensor_models = sensors.values_list('type', flat=True)  # get all models of sensor used by this controller
+    sensor_models = sensors.values_list('model', flat=True)  # get all models of sensor used by this controller
     sensor_datum_types = list(SensorModelDatumType.objects.filter(sensor__in=sensor_models).order_by('sensor',
                                                                                                      'datum_type'))  # get all datatypes relating to all models of sensor used
 

@@ -63,15 +63,16 @@ def simpleview(request):
 
     # process data into timestamp-grouped tuples accessible by sensor-index ([0] is timestamp)
     raw_data = SensorDatum.objects.filter(sensor__datalogger__device_name=device_name).order_by('timestamp', 'sensor')
+    row_count = len(raw_data)
     data = []
     data_idx = 0
 
-    while data_idx < len(raw_data):
+    while data_idx < row_count:
         data.append([raw_data[data_idx].timestamp])  # create new row, containing timestamp
         data[-1].extend([None] * sensor_count)  # append None placeholders to new row
         row_idx = 1
 
-        while data_idx < len(raw_data) and raw_data[data_idx].timestamp == data[-1][0]:
+        while data_idx < row_count and raw_data[data_idx].timestamp == data[-1][0]:
             row_idx = sensor_indices.get(raw_data[data_idx].sensor_name)
             data[-1][row_idx] = raw_data[data_idx].value
             data_idx += 1

@@ -3,7 +3,7 @@ from django.shortcuts import render, get_object_or_404
 from datetime import datetime
 from math import floor
 
-from .models import Datalogger, SensorModel, Sensor, DatumType, SensorModelDatumType, SensorDatum
+from .models import Datalogger, SensorModel, Sensor, DatumType, SensorDatum
 
 
 class DataTypeMismatchError(Exception):
@@ -25,8 +25,8 @@ def get_gchart_datetime_literal(pyDatetime):
     return literal
 
 
-def get_chart_trace_name(sensor_name, datum_type):
-    return '{} ({})'.format(sensor_name, datum_type)
+def get_chart_trace_name(sensor):
+    return '{} ({})'.format(sensor.name, sensor.datum_type.description)
 
 
 def prepare_data_for_gchart(column_labels, column_types, data):
@@ -58,24 +58,12 @@ def simpleview(request):
     device_name = request.GET['device']
     device = Datalogger.objects.get(device_name=device_name)
 
-    sensors = Sensor.objects.filter(datalogger=device).order_by('pk').select_related('model')
+    sensors = Sensor.objects.filter(datalogger=device).order_by('pk').select_related('datum_type')
     sensor_count = len(sensors)  # should be no worse than count() since already-evaluated and cached.  todo: confirm
-    sensor_models = sensors.values_list('model', flat=True)  # get all models of sensor used by this controller
-    sensor_datum_types = list(SensorModelDatumType.objects.filter(sensor__in=sensor_models).order_by('sensor',
-                                                                                                     'datum_type'))  # get all datatypes relating to all models of sensor used
-
     # assign each trace (sensor/datum_type combination) an indice for the tuples (zero is used for time/x-axis)
-    chart_traces = []
-    chart_trace_indices = {}
-    next_free_idx = 1
-    for sensor in sensors:
-        for datum_type in sensor_datum_types:
-            if datum_type.sensor == sensor.type:
-                chart_trace_name = get_chart_trace_name(sensor.sensor_name, datum_type.datum_type.description)
-                chart_traces.append({'sensor': sensor.sensor_name, 'datum_type': datum_type.datum_type.description,
-                                     'chart_trace_name': chart_trace_name})
-                chart_trace_indices.update({chart_trace_name: next_free_idx})
-                next_free_idx += 1
+    sensor_indices = {}
+    for idx, sensor in enumerate(sensors, start=1):
+        sensor_indices.update({sensor: idx})
 
     # process data into timestamp-grouped tuples accessible by chart_trace_index ([0] is timestamp)
     raw_data = SensorDatum.objects.filter(sensor__datalogger__device_name=device_name).order_by('timestamp', 'sensor')
@@ -85,19 +73,19 @@ def simpleview(request):
 
     while data_idx < row_count:
         data.append([raw_data[data_idx].timestamp])  # create new row, containing timestamp
-        data[-1].extend([None] * len(chart_traces))  # append None placeholders to new row
+        data[-1].extend([None] * sensor_count)  # append None placeholders to new row
         row_idx = 1
 
         while data_idx < row_count and raw_data[data_idx].timestamp == data[-1][0]:
             datum = raw_data[data_idx]
-            row_idx = chart_trace_indices.get(get_chart_trace_name(datum.sensor_name, datum.type.description))
-            data[-1][row_idx] = raw_data[data_idx].value
+            row_idx = sensor_indices.get(datum.sensor)
+            data[-1][row_idx] = datum.value
             data_idx += 1
 
     column_labels = ['Time']
     column_types = ["datetime"]
-    for chart_trace in chart_traces:
-        column_labels.append(chart_trace['chart_trace_name'])
+    for sensor in sensors:
+        column_labels.append(get_chart_trace_name(sensor))
         column_types.append("number")
 
     gchart_json = prepare_data_for_gchart(column_labels, column_types, data)
@@ -105,7 +93,7 @@ def simpleview(request):
     context = {
         'device': device_name,
         'sensor_count': sensor_count,
-        'sensor_indices': chart_trace_indices,
+        'sensor_indices': sensor_indices,
         'gchart_json': gchart_json,
     }
 

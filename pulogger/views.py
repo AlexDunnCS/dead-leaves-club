@@ -25,7 +25,7 @@ def get_gchart_datetime_literal(pyDatetime):
     return literal
 
 
-UPPER_DATA_COUNT_LIMIT = 500
+UPPER_DATA_COUNT_LIMIT = 100
 
 
 def get_datum_trace_key(datum):
@@ -108,7 +108,7 @@ def simpleview(request):
     # process data into timestamp-grouped tuples accessible by chart_trace_index ([0] is timestamp)
     raw_data = list(
         SensorDatum.objects.filter(sensor__datalogger__device_name=device_name).order_by('timestamp', 'sensor'))
-    raw_data = resolution_filter(raw_data)
+    # raw_data = resolution_filter(raw_data)
     row_count = len(raw_data)
     data = []
     data_idx = 0

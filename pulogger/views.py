@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.shortcuts import render, get_object_or_404
 from datetime import datetime
-from math import floor
+from math import floor, ceil
 
 from .models import Datalogger, SensorModel, Sensor, DatumType, SensorModelDatumType, SensorDatum
 
@@ -23,6 +23,34 @@ def get_gchart_datetime_literal(pyDatetime):
     )
 
     return literal
+
+
+UPPER_DATA_COUNT_LIMIT = 500
+
+
+def get_datum_trace_key(datum):
+    return '{}-{}'.format(datum.sensor, datum.type)
+
+
+# prevents large datasets from slowing page load
+def resolution_filter(data_list):
+    data_count = len(data_list)
+    if data_count <= UPPER_DATA_COUNT_LIMIT:
+        return data_list
+    else:
+        culled_list = []
+        skip_counts = {}
+        drop_factor = ceil(data_count / UPPER_DATA_COUNT_LIMIT)  # retain one datum per drop_factor samples, per trace
+        for datum in data_list:
+            key = get_datum_trace_key(datum)
+            if not key in skip_counts or skip_counts[key] >= drop_factor:
+                skip_counts.update({key: 0})
+                culled_list.append(datum)
+            else:
+                skip_counts.update({key: (skip_counts[key] + 1)})
+
+        # todo get the last reading from each sensor
+        return culled_list
 
 
 def get_chart_trace_name(sensor_name, datum_type):
@@ -78,7 +106,9 @@ def simpleview(request):
                 next_free_idx += 1
 
     # process data into timestamp-grouped tuples accessible by chart_trace_index ([0] is timestamp)
-    raw_data = SensorDatum.objects.filter(sensor__datalogger__device_name=device_name).order_by('timestamp', 'sensor')
+    raw_data = list(
+        SensorDatum.objects.filter(sensor__datalogger__device_name=device_name).order_by('timestamp', 'sensor'))
+    raw_data = resolution_filter(raw_data, sensor_count)
     row_count = len(raw_data)
     data = []
     data_idx = 0

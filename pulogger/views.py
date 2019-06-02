@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.shortcuts import render, get_object_or_404
-from datetime import datetime
+from datetime import datetime, timedelta
 from math import floor, ceil
 
 from .models import Datalogger, SensorModel, Sensor, DatumType, SensorModelDatumType, SensorDatum
@@ -25,7 +25,12 @@ def get_gchart_datetime_literal(pyDatetime):
     return literal
 
 
-UPPER_DATA_COUNT_LIMIT = 100
+def getStartTime():
+    time_threshold = datetime.now() - timedelta(hours=1)
+    return time_threshold
+
+
+UPPER_DATA_COUNT_LIMIT = 1000
 
 
 def get_datum_trace_key(datum):
@@ -107,7 +112,8 @@ def simpleview(request):
 
     # process data into timestamp-grouped tuples accessible by chart_trace_index ([0] is timestamp)
     raw_data = list(
-        SensorDatum.objects.filter(sensor__datalogger__device_name=device_name).order_by('timestamp', 'sensor'))
+        SensorDatum.objects.filter(sensor__datalogger__device_name=device_name, timestamp__gte=getStartTime()).order_by(
+            'timestamp', 'sensor'))
     # raw_data = resolution_filter(raw_data)
     row_count = len(raw_data)
     data = []

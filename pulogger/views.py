@@ -25,9 +25,54 @@ def get_gchart_datetime_literal(pyDatetime):
     return literal
 
 
-def getStartTime():
-    time_threshold = datetime.now() - timedelta(hours=1)
-    return time_threshold
+def parseUriDatetime(datetimeStr):
+    #input format YYYYMMDDTHHMMSSZ
+    uriDatetime = datetime(
+        datetimeStr[0:4],
+        datetimeStr[4:6],
+        datetimeStr[6:8],
+        datetimeStr[9:11],
+        datetimeStr[12:14],
+        datetimeStr[14:16]
+    )
+
+    return uriDatetime
+
+
+def get_filter_start_time(request):
+    filter_start_time = None
+    if 'timeFilter' in request.GET:
+        filter_type = request.GET['timeFilter']
+        if filter_type == 'lastHour':
+            filter_start_time = datetime.now() - timedelta(hours=1)
+        elif filter_type == 'lastDay':
+            filter_start_time = datetime.now() - timedelta(hours=24)
+        elif filter_type == 'lastWeek':
+            filter_start_time = datetime.now() - timedelta(days=7)
+        elif filter_type == 'lastMonth':
+            filter_start_time = datetime.now() - timedelta(days=30)
+        elif filter_type == 'lastHalfYear':
+            filter_start_time = datetime.now() - timedelta(days=180)
+        elif filter_type == 'lastYear':
+            filter_start_time = datetime.now() - timedelta(days=356)
+        elif filter_type == 'customRange':
+            filter_start_time = parseUriDatetime(request.GET['startDatetime'])
+        else:
+            filter_start_time = datetime.now() - timedelta(hours=6)
+    else:
+        filter_start_time = datetime.now() - timedelta(hours=1)
+    return filter_start_time
+
+def get_filter_end_time(request):
+    filter_end_time = None
+    if 'timeFilter' in request.GET and request.GET['timeFilter'] == 'customRange':
+        filter_end_time = parseUriDatetime(request.GET['endDatetime'])
+    else:
+        filter_end_time = datetime.now()
+
+    return filter_end_time
+
+
 
 
 UPPER_DATA_COUNT_LIMIT = 1000
@@ -112,7 +157,7 @@ def simpleview(request):
 
     # process data into timestamp-grouped tuples accessible by chart_trace_index ([0] is timestamp)
     raw_data = list(
-        SensorDatum.objects.filter(sensor__datalogger__device_name=device_name, timestamp__gte=getStartTime()).order_by(
+        SensorDatum.objects.filter(sensor__datalogger__device_name=device_name, timestamp__gte=get_filter_start_time(request), timestamp__lte=get_filter_end_time(request)).order_by(
             'timestamp', 'sensor'))
     # raw_data = resolution_filter(raw_data)
     row_count = len(raw_data)

@@ -36,5 +36,10 @@
 {% endblock %}
 
 {% block page_content %}
+    <a href="/pulogger/simpleview/?device={{ device }}&timeFilter=lastHour">Filter to last hour</a> |
+    <a href="/pulogger/simpleview/?device={{ device }}&timeFilter=lastDay">Filter to last day</a> |
+    <a href="/pulogger/simpleview/?device={{ device }}&timeFilter=lastWeek">Filter to last week</a> |
+    <a href="/pulogger/simpleview/?device={{ device }}&timeFilter=lastMonth">Filter to last month</a> |
+    <a href="/pulogger/simpleview/?device={{ device }}&timeFilter=lastYear">Filter to last year</a>
     <div id="chart_div"></div>
 {% endblock %}

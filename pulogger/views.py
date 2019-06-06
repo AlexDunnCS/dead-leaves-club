@@ -143,8 +143,13 @@ def simpleview(request):
                                                                                                      'datum_type'))  # get all datatypes relating to all models of sensor used
 
     # assign each trace (sensor/datum_type combination) an indice for the tuples (zero is used for time/x-axis)
+    bulk_queryset = SensorDatum.objects.filter(sensor__datalogger__device_name=device_name,
+                                               timestamp__gte=get_filter_start_time(request),
+                                               timestamp__lte=get_filter_end_time(request))
     chart_traces = []
     chart_trace_indices = {}
+    chart_trace_data = [None]
+    chart_trace_queryset = SensorDatum.objects.none()
     next_free_idx = 1
     for sensor in sensors:
         for datum_type in sensor_datum_types:
@@ -153,13 +158,12 @@ def simpleview(request):
                 chart_traces.append({'sensor': sensor.sensor_name, 'datum_type': datum_type.datum_type.description,
                                      'chart_trace_name': chart_trace_name})
                 chart_trace_indices.update({chart_trace_name: next_free_idx})
+                chart_trace_queryset = chart_trace_queryset | bulk_queryset.filter(sensor_id=sensor.id,
+                                                                                   type_id=datum_type.datum_type.id)
                 next_free_idx += 1
 
     # process data into timestamp-grouped tuples accessible by chart_trace_index ([0] is timestamp)
-    raw_data = list(
-        SensorDatum.objects.filter(sensor__datalogger__device_name=device_name, timestamp__gte=get_filter_start_time(request), timestamp__lte=get_filter_end_time(request)).order_by(
-            'timestamp', 'sensor'))
-    # raw_data = resolution_filter(raw_data)
+    raw_data = list(chart_trace_queryset.order_by('timestamp', 'sensor_id', 'type_id'))
     row_count = len(raw_data)
     data = []
     data_idx = 0

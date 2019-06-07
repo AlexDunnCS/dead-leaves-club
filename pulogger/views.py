@@ -73,38 +73,28 @@ def get_filter_end_time(request):
     return filter_end_time
 
 
+UPPER_DATA_COUNT_LIMIT = 5000
 
 
-UPPER_DATA_COUNT_LIMIT = 1000
-
-
-def get_datum_trace_key(datum):
-    return '{}-{}'.format(datum.sensor, datum.type)
-
-
-# prevents large datasets from slowing page load
-def resolution_filter(data_list):
-    data_count = len(data_list)
-    if data_count <= UPPER_DATA_COUNT_LIMIT:
-        return data_list
+def get_filter_usec_threshold(bulk_queryset):
+    bulk_data_count = bulk_queryset.count()
+    if bulk_data_count > UPPER_DATA_COUNT_LIMIT:
+        return UPPER_DATA_COUNT_LIMIT / bulk_data_count * 999999
     else:
-        culled_list = []
-        skip_counts = {}
-        drop_factor = ceil(data_count / UPPER_DATA_COUNT_LIMIT)  # retain one datum per drop_factor samples, per trace
-        for datum in data_list:
-            key = get_datum_trace_key(datum)
-            if not key in skip_counts or skip_counts[key] >= drop_factor:
-                skip_counts.update({key: 0})
-                culled_list.append(datum)
-            else:
-                skip_counts.update({key: (skip_counts[key] + 1)})
+        return 999999
 
-        # todo get the last reading from each sensor
-        return culled_list
+
+def downsample(bulk_queryset):
+    usec_threshold = get_filter_usec_threshold(bulk_queryset)
+    return bulk_queryset.extra(where=["microsecond(timestamp) <= '{}'".format(usec_threshold)])
 
 
 def get_chart_trace_name(sensor_name, datum_type):
     return '{} ({})'.format(sensor_name, datum_type)
+
+
+def get_chart_trace_id(sensor_id, type_id):
+    return '{}-{}'.format(sensor_id, type_id)
 
 
 def prepare_data_for_gchart(column_labels, column_types, data):
@@ -139,45 +129,44 @@ def simpleview(request):
     sensors = Sensor.objects.filter(datalogger=device).order_by('pk').select_related('type')
     sensor_count = len(sensors)  # should be no worse than count() since already-evaluated and cached.  todo: confirm
     sensor_models = sensors.values_list('type', flat=True)  # get all models of sensor used by this controller
-    sensor_datum_types = list(SensorModelDatumType.objects.filter(sensor__in=sensor_models).order_by('sensor',
+    sensor_model_datum_types = list(SensorModelDatumType.objects.filter(sensor__in=sensor_models).order_by('sensor',
                                                                                                      'datum_type'))  # get all datatypes relating to all models of sensor used
 
     # assign each trace (sensor/datum_type combination) an indice for the tuples (zero is used for time/x-axis)
     bulk_queryset = SensorDatum.objects.filter(sensor__datalogger__device_name=device_name,
                                                timestamp__gte=get_filter_start_time(request),
                                                timestamp__lte=get_filter_end_time(request))
+    downsampled_queryset = downsample(
+        SensorDatum.objects.filter(sensor__datalogger__device_name=device_name,
+                                   timestamp__gte=get_filter_start_time(request),
+                                   timestamp__lte=get_filter_end_time(request))
+    ).order_by('timestamp', 'sensor_id', 'type_id')
+
     chart_traces = []
     chart_trace_indices = {}
-    chart_trace_data = [None]
-    chart_trace_queryset = SensorDatum.objects.none()
     next_free_idx = 1
     for sensor in sensors:
-        for datum_type in sensor_datum_types:
-            if datum_type.sensor == sensor.type:
-                chart_trace_name = get_chart_trace_name(sensor.sensor_name, datum_type.datum_type.description)
-                chart_traces.append({'sensor': sensor.sensor_name, 'datum_type': datum_type.datum_type.description,
+        for sensor_model_datum_type in sensor_model_datum_types:
+            if sensor_model_datum_type.sensor == sensor.type:
+                chart_trace_name = get_chart_trace_name(sensor.sensor_name,
+                                                        sensor_model_datum_type.datum_type.description)
+                chart_traces.append(
+                    {'sensor': sensor.sensor_name, 'datum_type': sensor_model_datum_type.datum_type.description,
                                      'chart_trace_name': chart_trace_name})
-                chart_trace_indices.update({chart_trace_name: next_free_idx})
-                chart_trace_queryset = chart_trace_queryset | bulk_queryset.filter(sensor_id=sensor.id,
-                                                                                   type_id=datum_type.datum_type.id)
+                chart_trace_indices.update(
+                    {get_chart_trace_id(sensor.id, sensor_model_datum_type.datum_type_id): next_free_idx})
                 next_free_idx += 1
 
     # process data into timestamp-grouped tuples accessible by chart_trace_index ([0] is timestamp)
-    raw_data = list(chart_trace_queryset.order_by('timestamp', 'sensor_id', 'type_id'))
-    row_count = len(raw_data)
+    raw_data = downsampled_queryset.values()
     data = []
-    data_idx = 0
 
-    while data_idx < row_count:
-        data.append([raw_data[data_idx].timestamp])  # create new row, containing timestamp
-        data[-1].extend([None] * len(chart_traces))  # append None placeholders to new row
-        row_idx = 1
+    for datum in raw_data:
+        if len(data) == 0 or datum['timestamp'] != data[-1][0]:
+            data.append([datum['timestamp']])
+            data[-1].extend([None] * len(chart_traces))
 
-        while data_idx < row_count and raw_data[data_idx].timestamp == data[-1][0]:
-            datum = raw_data[data_idx]
-            row_idx = chart_trace_indices.get(get_chart_trace_name(datum.sensor_name, datum.type.description))
-            data[-1][row_idx] = raw_data[data_idx].value
-            data_idx += 1
+        data[-1][chart_trace_indices[get_chart_trace_id(datum['sensor_id'], datum['type_id'])]] = datum['value']
 
     column_labels = ['Time']
     column_types = ["datetime"]

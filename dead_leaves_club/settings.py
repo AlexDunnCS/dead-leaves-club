@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+import secrets as secrets
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -77,16 +78,7 @@ WSGI_APPLICATION = 'dead_leaves_club.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'deadleavesclub',
-        'USER': 'allaccess',
-        'PASSWORD': 'replaceMeWithSomethingGoodInProd',
-        'HOST': 'localhost',   # Or an IP Address that your DB is hosted on
-        'PORT': '3306',
-    }
-}
+DATABASES = secrets.DATABASES
 
 
 # Password validation

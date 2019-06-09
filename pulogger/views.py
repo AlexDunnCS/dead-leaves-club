@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.shortcuts import render, get_object_or_404
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from math import floor, ceil
 
 from .models import Datalogger, SensorModel, Sensor, DatumType, SensorModelDatumType, SensorDatum
@@ -37,6 +37,10 @@ def parseUriDatetime(datetimeStr):
     )
 
     return uriDatetime
+
+
+def utc_to_local(utc_dt):
+    return utc_dt.replace(tzinfo=timezone.utc).astimezone(tz=None)
 
 
 def get_filter_start_time(request):

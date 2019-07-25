@@ -1,6 +1,6 @@
 .idea/
 venv/
+*.pyc
 
 */migrations/0*.py
 *secret*
-.static/*

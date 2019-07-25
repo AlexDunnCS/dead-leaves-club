@@ -9,9 +9,7 @@ var HUMIDITYLOWLIMIT = 15.0;
 
 $(document).ready(function () {
 
-    $(".datepicker").datepicker().on("changeDate", function () {
-        $(this).datepicker('hide'); //Todo: implement check to ensure from < to
-    });
+    initialiseDatepickers();
 
     // Updates modal and shows it
     $(".time-filter-select").click(function () {
@@ -31,6 +29,19 @@ $(document).ready(function () {
         });
     });
 });
+
+function initialiseDatepickers() {
+    let today = new Date();
+    let tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    $(".datepicker").datepicker().on("changeDate", function () {
+        $(this).datepicker('hide'); //Todo: implement check to ensure from < to
+    });
+
+    $(".datepicker.from").datepicker('setDate', today);
+    $(".datepicker.to").datepicker('setDate', tomorrow);
+}
 
 function convert12hrTo24hr(hour, isPm) {
     let hour24 = parseInt(hour) === 12 ? 0 : parseInt(hour);

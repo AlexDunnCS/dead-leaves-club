@@ -1,0 +1,32 @@
+{% extends 'global/site-template.html' %}
+
+{% load static %}
+
+{% block html_title %}New Visualisation for {{ device }}{% endblock %}
+
+{% block head_includes %}
+    <link rel="stylesheet" href= {% static "pulogger/css/new_view.css" %}>
+
+    <script type="text/javascript" src="{% static 'pulogger/js/canvasjs.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'pulogger/js/chart-modal.js' %}"></script>
+
+
+{% endblock %}
+
+{% block page_content %}
+    <a href="/pulogger/simpleview/?device={{ device }}&timeFilter=lastHour">Filter to last hour</a> |
+    <a href="/pulogger/simpleview/?device={{ device }}&timeFilter=lastDay">Filter to last day</a> |
+    <a href="/pulogger/simpleview/?device={{ device }}&timeFilter=lastWeek">Filter to last week</a> |
+    <a href="/pulogger/simpleview/?device={{ device }}&timeFilter=lastMonth">Filter to last month</a> |
+    <a href="/pulogger/simpleview/?device={{ device }}&timeFilter=lastYear">Filter to last year</a>
+
+    {% include 'pulogger/pumidor_modal.html' %}
+
+
+    <script>
+        $(document).ready(function () {
+            updateModalContents('test');
+        });
+    </script>
+
+{% endblock %}

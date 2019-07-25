@@ -1,0 +1,26 @@
+<div id="measurement-history-modal" class="modal fade modal-xl" tabindex="-1" role="dialog">
+    <div class="modal-dialog  modal-dialog-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modal title</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="modal-filter" type="POST" class="datetime-group">
+                    {% csrf_token %}
+                    {{ modal_datetime_range_picker }}
+                </form>
+
+                <div id="chartContainer"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary time-filter-select" type="button" value="customRange">Filter to Range
+                </button>
+                <button class="btn btn-primary data-export" type="button" format="csv">Export to CSV</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

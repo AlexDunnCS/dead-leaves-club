@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
-import secrets as secrets
+import secret_config
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -21,12 +21,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = secrets.SECRET_KEY
+SECRET_KEY = secret_config.SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = secrets.ALLOWED_HOSTS
+ALLOWED_HOSTS = secret_config.ALLOWED_HOSTS
 
 # Application definition
 
@@ -52,7 +52,6 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'dead_leaves_club.urls'
-STATIC_ROOT = '/srv/django/deadleavesclub/static'
 
 TEMPLATES = [
     {
@@ -77,7 +76,7 @@ WSGI_APPLICATION = 'dead_leaves_club.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
-DATABASES = secrets.DATABASES
+DATABASES = secret_config.DATABASES
 
 
 # Password validation

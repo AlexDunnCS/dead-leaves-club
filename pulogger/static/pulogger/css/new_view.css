@@ -1,0 +1,16 @@
+#chartContainer {
+    min-height: 400px;
+}
+
+.modal-xl {
+    max-width: 100%;
+!important;
+}
+
+.modal-dialog-xl {
+    max-width: 70%;
+}
+
+/*#measurement-history-modal {*/
+/*    max-width: 70%; !important;*/
+/*}*/

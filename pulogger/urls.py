@@ -15,13 +15,18 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from django.conf import settings
+from django.conf.urls.static import static
 
 from . import views
 
 app_name = 'pulogger'
 
 urlpatterns = [
-    path('simpleview/', views.simpleview, name='simpleview'),
-    path('submitdatum/', views.submitdatum, name='submitdatum'),
+    # path('simpleview/', views.simpleview, name='simpleview'),
+    path('newview/', views.newview, name='newview'),
+    path('getHistory/', views.get_history, name='gethistory'),
+    path('requestServerTime/', views.request_server_time, name='requestservertime'),
+    path('submitdata/', views.submit_data, name='submitdata'),
     path('', views.index, name='index')
 ]

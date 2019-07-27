@@ -114,9 +114,15 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
+# app_name/static/app_name is searched by default (need to check, but 99% sure this is true)
 
+# The url from which requests for static files will be made (host.com/static/path/to/my_file.ext)
 STATIC_URL = '/static/'
+
+# The server filepath in which static files will be collected using collectstatic
 STATIC_ROOT = '/srv/django/deadleavesclub/static/'
+
+# Additional local-storage (dev and server) folders which will be searched for static files
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static_files'),
 ]

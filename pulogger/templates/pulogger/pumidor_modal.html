@@ -1,3 +1,7 @@
+{% load static %}
+
+<link rel="stylesheet" href= {% static "pulogger/css/chart-modal.css" %}>
+
 <div id="measurement-history-modal" class="modal fade modal-xl" tabindex="-1" role="dialog">
     <div class="modal-dialog  modal-dialog-xl modal-dialog-centered">
         <div class="modal-content">
@@ -8,16 +12,40 @@
                 </button>
             </div>
             <div class="modal-body">
+                <div id="chartContainer"></div>
+
                 <form id="modal-filter" type="POST" class="datetime-group">
                     {% csrf_token %}
+
+                    <div id="filter-group-from" class="filter-group">
+                        <div class="row">
+                            <div class="col-xs-1 col-xs-offset-2 field-group-label">From:</div>
+                            <div class="col-xs-9 field-container"></div>
+                        </div>
+                    </div>
+
+                    <div id="filter-group-to" class="filter-group">
+                        <div class="row">
+                            <div class="col-xs-1 col-xs-offset-2 field-group-label">To:</div>
+                            <div class="col-xs-9 field-container"></div>
+                        </div>
+                    </div>
+
+                    <div id="filter-group" class="filter-group">
+                        <div class="row">
+                            <div class="col-xs-9 col-xs-offset-3">
+                                <button class="btn btn-primary time-filter-select" type="button" value="customRange">
+                                    Filter to Range
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     {{ modal_datetime_range_picker }}
                 </form>
 
-                <div id="chartContainer"></div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary time-filter-select" type="button" value="customRange">Filter to Range
-                </button>
                 <button class="btn btn-primary data-export" type="button" format="csv">Export to CSV</button>
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             </div>

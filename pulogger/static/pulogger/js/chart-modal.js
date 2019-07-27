@@ -11,6 +11,8 @@ $(document).ready(function () {
 
     initialiseDatepickers();
 
+    setFormFieldLayout();
+
     // Updates modal and shows it
     $(".time-filter-select").click(function () {
         updateModalContents(null);
@@ -29,6 +31,20 @@ $(document).ready(function () {
         });
     });
 });
+
+function moveModalFormElementsToGroup(groupName) {
+    groupElement = $(`#filter-group-${groupName}`).find(".field-container");
+
+    $("#modal-filter").find(`.${groupName}`).each(function () {
+        $(this).detach();
+        $(this).appendTo(groupElement);
+    });
+}
+
+function setFormFieldLayout() {
+    moveModalFormElementsToGroup("from");
+    moveModalFormElementsToGroup("to");
+}
 
 function initialiseDatepickers() {
     let today = new Date();
@@ -49,7 +65,6 @@ function convert12hrTo24hr(hour, isPm) {
 }
 
 function getDateObjFromPicker(parentSelector, classSelector) {
-    // let dateObj = new Date($(parentSelector).find(classSelector + ".date").datepicker('getDate'));
     let dateObj = new Date($(parentSelector).find(classSelector + ".date").datepicker('getDate'));
     dateObj.setHours(
         convert12hrTo24hr($(parentSelector).find(classSelector + ".hours").val(), $(parentSelector).find(classSelector + ".is-pm").val() === "True"),

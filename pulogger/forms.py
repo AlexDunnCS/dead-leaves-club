@@ -24,55 +24,55 @@ def getMinuteChoices():
 class DatetimeRangePicker(forms.Form):
     from_date = forms.DateField(label='', widget=forms.TextInput(
         attrs={
-            'class': 'from date datepicker'
+            'class': 'from date datepicker modal-form-field'
         }
     ))
 
     from_hours = forms.IntegerField(label='', widget=forms.Select(
         choices=getHourChoices(),
         attrs={
-            'class': 'from hours'
+            'class': 'from hours modal-form-field'
         }
     ))
 
-    from_minutes = forms.IntegerField(label=':', widget=forms.Select(
+    from_minutes = forms.IntegerField(label='', widget=forms.Select(
         choices=getMinuteChoices(),
         attrs={
-            'class': 'from minutes'
+            'class': 'from minutes modal-form-field'
         }
     ))
 
     from_is_pm = forms.BooleanField(required=False, label='', widget=forms.Select(
         choices=BOOL_CHOICES,
         attrs={
-            'class': 'from is-pm'
+            'class': 'from is-pm modal-form-field'
         }
     ))
 
     to_date = forms.DateField(label='', widget=forms.TextInput(
         attrs={
-            'class': 'to date datepicker'
+            'class': 'to date datepicker modal-form-field'
         }
     ))
 
     to_hours = forms.IntegerField(label='', widget=forms.Select(
         choices=getHourChoices(),
         attrs={
-            'class': 'to hours'
+            'class': 'to hours modal-form-field'
         }
     ))
 
-    to_minutes = forms.IntegerField(label=':', widget=forms.Select(
+    to_minutes = forms.IntegerField(label='', widget=forms.Select(
         choices=getMinuteChoices(),
         attrs={
-            'class': 'to minutes'
+            'class': 'to minutes modal-form-field'
         }
     ))
 
     to_is_pm = forms.BooleanField(required=False, label='', widget=forms.Select(
         choices=BOOL_CHOICES,
         attrs={
-            'class': 'to is-pm'
+            'class': 'to is-pm modal-form-field'
         }
     ))
 

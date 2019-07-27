@@ -227,7 +227,7 @@ def utc_to_local(utc_dt):
     return utc_dt.replace(tzinfo=timezone.utc).astimezone(tz=None)
 
 
-UPPER_DATA_COUNT_LIMIT = 5000
+UPPER_DATA_COUNT_LIMIT = 2000
 
 
 def get_filter_usec_threshold(bulk_queryset):

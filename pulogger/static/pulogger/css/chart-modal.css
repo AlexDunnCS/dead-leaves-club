@@ -29,6 +29,14 @@
     margin-right: 8px;;
 }
 
+.modal-dialog-xl {
+    max-width: 100%;
+}
+
+.datepicker.modal-form-field {
+    width: 100px;
+}
+
 button.time-filter-select {
     margin-top: 5px;
 }

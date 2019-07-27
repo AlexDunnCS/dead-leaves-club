@@ -1,12 +1,3 @@
-var TEMPERATUREHIGHLIMIT = 25.0;
-var TEMPERATUREHIGHWARNING = 24.0;
-var TEMPERATURELOWWARNING = 19.0;
-var TEMPERATURELOWLIMIT = 18.0;
-var HUMIDITYHIGHLIMIT = 70.0;
-var HUMIDITYHIGHWARNING = 65.0;
-var HUMIDITYLOWWARNING = 30.0;
-var HUMIDITYLOWLIMIT = 15.0;
-
 $(document).ready(function () {
 
     initialiseDatepickers();
@@ -26,11 +17,24 @@ $(document).ready(function () {
         };
 
         getHistoricalDeviceReadings(context, function (context, data) {
-            let filename = `metrology_export_${context.deviceSn}_${context.deviceLocation}_${formatDatetimeForFilename(context.from)}_to_${formatDatetimeForFilename(context.to)}.csv`;
+            let filename = `pumidor_export_${context.deviceSn}_${context.deviceLocation}_${dateObjToUtcString(context.from)}_to_${dateObjToUtcString(context.to)}.csv`;
             saveData(data, filename);
         });
     });
 });
+
+function initialiseDatepickers() {
+    let today = new Date();
+    let tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    $(".datepicker").datepicker().on("changeDate", function () {
+        $(this).datepicker('hide'); //Todo: implement check to ensure from < to
+    });
+
+    $(".datepicker.from").datepicker('setDate', today);
+    $(".datepicker.to").datepicker('setDate', tomorrow);
+}
 
 function moveModalFormElementsToGroup(groupName) {
     groupElement = $(`#filter-group-${groupName}`).find(".field-container");
@@ -44,19 +48,6 @@ function moveModalFormElementsToGroup(groupName) {
 function setFormFieldLayout() {
     moveModalFormElementsToGroup("from");
     moveModalFormElementsToGroup("to");
-}
-
-function initialiseDatepickers() {
-    let today = new Date();
-    let tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    $(".datepicker").datepicker().on("changeDate", function () {
-        $(this).datepicker('hide'); //Todo: implement check to ensure from < to
-    });
-
-    $(".datepicker.from").datepicker('setDate', today);
-    $(".datepicker.to").datepicker('setDate', tomorrow);
 }
 
 function convert12hrTo24hr(hour, isPm) {
@@ -76,7 +67,7 @@ function getDateObjFromPicker(parentSelector, classSelector) {
     return dateObj;
 }
 
-function formatDatetimeForFilename(dateObj) {
+function dateObjToUtcString(dateObj) {
     let year = dateObj.getFullYear().toString();
     let month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
     let date = dateObj.getDate().toString().padStart(2, '0');
@@ -140,7 +131,7 @@ function renderChart(context, dataJson) {
             verticalAlign: "top",
             horizontalAlign: "center",
             dockInsidePlotArea: false,
-            // itemclick: toggleDataSeries
+            itemclick: "toggleDataSeries"
         },
         data: dataJson
     });

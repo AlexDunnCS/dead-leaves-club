@@ -219,7 +219,6 @@ def prepare_data_for_canvasjs(column_labels, column_types, data):
     trace_jsons = [json + ']}\n' for json in trace_jsons]
 
     prepared_json = '[' + ','.join(trace_jsons) + '\n]'
-    # prepared_json = '[' + trace_jsons[0] + '\n]'
 
     return prepared_json
 

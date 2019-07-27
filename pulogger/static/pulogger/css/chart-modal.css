@@ -35,9 +35,10 @@
 }
 
 .datepicker.modal-form-field {
-    width: 100px;
+    width: 120px;
 }
 
 button.time-filter-select {
+    width: 120px;
     margin-top: 5px;
 }

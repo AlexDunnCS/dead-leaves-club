@@ -19,7 +19,7 @@ function initialiseDatepickers() {
     let tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    $(".datepicker").datepicker().on("changeDate", function () {
+    $(".datepicker").datepicker().attr('readonly', 'readonly').on("changeDate", function () {
         $(this).datepicker('hide'); //Todo: implement check to ensure from < to
     });
 

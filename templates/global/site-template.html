@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <title>{% block html_title %}{% endblock %}</title>
+    <link rel="shortcut icon" type="image/ico" href="{% static 'img/favicon.ico' %}"/>
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>

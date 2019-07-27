@@ -10,16 +10,7 @@ $(document).ready(function () {
     });
 
     $(".data-export").click(function () {
-        let modal = $("#measurementHistoryModal");
-        let context = {
-            deviceSn: "test",
-            exportFormat: $(this).attr("format"),
-        };
-
-        getHistoricalDeviceReadings(context, function (context, data) {
-            let filename = `pumidor_export_${context.deviceSn}_${context.deviceLocation}_${dateObjToUtcString(context.from)}_to_${dateObjToUtcString(context.to)}.csv`;
-            saveData(data, filename);
-        });
+        exportData();
     });
 });
 
@@ -48,6 +39,19 @@ function moveModalFormElementsToGroup(groupName) {
 function setFormFieldLayout() {
     moveModalFormElementsToGroup("from");
     moveModalFormElementsToGroup("to");
+}
+
+function exportData() {
+    let modal = $("#measurementHistoryModal");
+    let context = {
+        deviceSn: "test",
+        exportFormat: $(this).attr("format"),
+    };
+
+    getHistoricalDeviceReadings(context, function (context, data) {
+        let filename = `pumidor_export_${context.deviceSn}_${context.deviceLocation}_${dateObjToUtcString(context.from)}_to_${dateObjToUtcString(context.to)}.csv`;
+        saveData(data, filename);
+    });
 }
 
 function convert12hrTo24hr(hour, isPm) {
@@ -137,7 +141,6 @@ function renderChart(context, dataJson) {
     });
 
     chart.render();
-
 }
 
 // Refresh modal and show, if necessary

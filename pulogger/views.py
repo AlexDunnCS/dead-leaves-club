@@ -280,6 +280,7 @@ data_update_hysteresis = {
     'humidity': 2.0,
 }
 
+
 def submit_data(request):
     device = request.GET['device']
     sensor_names = request.GET['sensors'].split(',')
@@ -316,7 +317,8 @@ def submit_data(request):
                 '-timestamp').first()
 
             # if the difference from last logged value exceeds hysteresis, or last log happened sufficiently long ago
-            if abs(datum['value'] - most_recent_reading.value) > data_update_hysteresis[datum['type']] \
+            if not most_recent_reading \
+                    or abs(datum['value'] - most_recent_reading.value) > data_update_hysteresis[datum['type']] \
                     and timestamp > (
                     most_recent_reading.timestamp + different_value_update_lockout) \
                     or timestamp > (

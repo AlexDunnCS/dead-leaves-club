@@ -273,7 +273,7 @@ def newview(request):
     return render(request, 'pulogger/new_view.html', context)
 
 
-similar_value_update_lockout_minutes = 5
+similar_value_update_lockout_minutes = 30
 different_value_update_lockout_minutes = 1
 data_update_hysteresis = {
     'temperature': 0.2,

@@ -273,8 +273,8 @@ def newview(request):
     return render(request, 'pulogger/new_view.html', context)
 
 
-similar_value_update_lockout_minutes = 5
-different_value_update_lockout_minutes = 1
+similar_value_update_lockout = timedelta(minutes=29, seconds=50)
+different_value_update_lockout = timedelta(seconds=50)
 data_update_hysteresis = {
     'temperature': 0.2,
     'humidity': 2.0,
@@ -318,9 +318,9 @@ def submit_data(request):
             # if the difference from last logged value exceeds hysteresis, or last log happened sufficiently long ago
             if abs(datum['value'] - most_recent_reading.value) > data_update_hysteresis[datum['type']] \
                     and timestamp > (
-                    most_recent_reading.timestamp + timedelta(minutes=different_value_update_lockout_minutes)) \
+                    most_recent_reading.timestamp + different_value_update_lockout) \
                     or timestamp > (
-                    most_recent_reading.timestamp + timedelta(minutes=similar_value_update_lockout_minutes)):
+                    most_recent_reading.timestamp + similar_value_update_lockout):
                 # log the datum
                 new_datum = SensorDatum(
                     submission_ip=submission_ip,

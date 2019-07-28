@@ -312,8 +312,8 @@ def submit_data(request):
                 raise DataTypeMismatchError('Sensor type {} cannot measure {}.'.format(sensor.type.type, datum['type']))
 
             # Get the (indexed, unique) full-form sensor name and most recent reading
-            sensordatum_sensor_name = f'{sensor.sensor_name};{sensor.id};{datum_type.id}'
-            most_recent_reading = SensorDatum.objects.filter(sensor_name=sensordatum_sensor_name).order_by(
+            unique_sensor_name = f'{sensor.sensor_name};{sensor.id};{datum_type.id}'
+            most_recent_reading = SensorDatum.objects.filter(unique_sensor_name=unique_sensor_name).order_by(
                 '-timestamp').first()
 
             # if the difference from last logged value exceeds hysteresis, or last log happened sufficiently long ago

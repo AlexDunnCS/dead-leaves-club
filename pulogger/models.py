@@ -65,7 +65,7 @@ class SensorModelDatumType(models.Model):
 
 class SensorDatum(models.Model):
     sensor = models.ForeignKey(Sensor, db_index=True, on_delete=models.CASCADE)
-    sensor_name = models.CharField(db_index=True, max_length=16, default='placeholder')
+    unique_sensor_name = models.CharField(db_index=True, max_length=32, default='placeholder')
     submission_ip = models.GenericIPAddressField()
     timestamp = models.DateTimeField()
     type = models.ForeignKey(DatumType, db_index=True, on_delete=models.PROTECT)
@@ -78,5 +78,5 @@ class SensorDatum(models.Model):
                                                                   self.submission_ip)
 
     def save(self, *args, **kwargs):
-        self.sensor_name = f'{self.sensor.sensor_name};{self.sensor_id};{self.type_id}'  # for fast retrieval in chart views
+        self.unique_sensor_name = f'{self.sensor.sensor_name};{self.sensor_id};{self.type_id}'  # for fast retrieval in chart views
         super().save(*args, **kwargs)

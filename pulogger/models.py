@@ -78,5 +78,5 @@ class SensorDatum(models.Model):
                                                                   self.submission_ip)
 
     def save(self, *args, **kwargs):
-        self.sensor_name = f'{self.sensor.sensor_name};{self.sensor};{self.type}'  # for fast retrieval in chart views
+        self.sensor_name = f'{self.sensor.sensor_name};{self.sensor_id};{self.type_id}'  # for fast retrieval in chart views
         super().save(*args, **kwargs)

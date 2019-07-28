@@ -42,6 +42,11 @@ class Sensor(models.Model):
     def __str__(self):
         return '{} ({}) - {} attached to {}'.format(self.sensor_name, self.description, self.type, self.datalogger)
 
+    def save(self, *args, **kwargs):
+        if ';' in self.sensor_name:
+            raise ValueError('Sensor.save(): sensor_name cannot contain semicolon')
+        super().save(*args, **kwargs)
+
 
 class DatumType(models.Model):
     description = models.CharField(db_index=True, max_length=16)
@@ -59,11 +64,11 @@ class SensorModelDatumType(models.Model):
 
 
 class SensorDatum(models.Model):
-    sensor = models.ForeignKey(Sensor, on_delete=models.CASCADE)
+    sensor = models.ForeignKey(Sensor, db_index=True, on_delete=models.CASCADE)
     sensor_name = models.CharField(db_index=True, max_length=16, default='placeholder')
     submission_ip = models.GenericIPAddressField()
     timestamp = models.DateTimeField()
-    type = models.ForeignKey(DatumType, on_delete=models.PROTECT)
+    type = models.ForeignKey(DatumType, db_index=True, on_delete=models.PROTECT)
     value = models.DecimalField(max_digits=4, decimal_places=2)
 
     def __str__(self):
@@ -73,5 +78,5 @@ class SensorDatum(models.Model):
                                                                   self.submission_ip)
 
     def save(self, *args, **kwargs):
-        self.sensor_name = self.sensor.sensor_name  # for fast retrieval in chart views
+        self.sensor_name = f'{self.sensor.sensor_name};{self.sensor_id};{self.type_id}'  # for fast retrieval in chart views
         super().save(*args, **kwargs)

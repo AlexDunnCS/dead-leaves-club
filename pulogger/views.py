@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 from pulogger.forms import DatetimeRangePicker
 from math import floor, ceil
+from decimal import Decimal
 
 from .models import Datalogger, SensorModel, Sensor, DatumType, SensorModelDatumType, SensorDatum
 
@@ -272,13 +273,20 @@ def newview(request):
     return render(request, 'pulogger/new_view.html', context)
 
 
+similar_value_update_lockout_minutes = 5
+different_value_update_lockout_minutes = 1
+data_update_hysteresis = {
+    'temperature': 0.2,
+    'humidity': 2.0,
+}
+
 def submit_data(request):
     device = request.GET['device']
     sensor_names = request.GET['sensors'].split(',')
     datum_types = request.GET['types'].split(',')
     datum_values = request.GET['values'].split(',')
-    timestamp = datetime.utcfromtimestamp(int(request.GET['timestamp']))
-    data = ({'sensor_name': sensor_names[idx], 'type': datum_types[idx], 'value': datum_values[idx]} for idx in
+    timestamp = datetime.utcfromtimestamp(int(request.GET['timestamp'])).replace(tzinfo=timezone(timedelta()))
+    data = ({'sensor_name': sensor_names[idx], 'type': datum_types[idx], 'value': Decimal(datum_values[idx])} for idx in
             range(0, len(sensor_names)))
     submission_ip = "1.1.1.1"  # placeholder
 
@@ -289,28 +297,46 @@ def submit_data(request):
 
     for datum in data:
         try:
-            # Check that a valid sensor exists for the parameters provided, else throw exception
             sensor = Sensor.objects.get(
                 sensor_name=datum['sensor_name'],
                 datalogger__device_name=device
             )
 
-            if not SensorModelDatumType.objects.filter(sensor__type=sensor.type.type,
-                                                       datum_type__description=datum['type']).exists():
+            # Get the datumtype id so we can generate the full 'sensor_name;sensor_id_;type_id' string
+            datum_type = SensorModelDatumType.objects.filter(sensor__type=sensor.type.type,
+                                                             datum_type__description=datum['type']).first()
+
+            # Check that a valid sensor exists for the parameters provided, else throw exception
+            if not datum_type:
                 raise DataTypeMismatchError('Sensor type {} cannot measure {}.'.format(sensor.type.type, datum['type']))
 
-            new_datum = SensorDatum(
-                submission_ip=submission_ip,
-                timestamp=timestamp,
-                value=datum['value'],
-                sensor_id=sensor.pk,
-                type_id=DatumType.objects.get(description=datum['type']).pk,
-            )
+            # Get the (indexed, unique) full-form sensor name and most recent reading
+            sensordatum_sensor_name = f'{sensor.sensor_name};{sensor.id};{datum_type.id}'
+            most_recent_reading = SensorDatum.objects.filter(sensor_name=sensordatum_sensor_name).order_by(
+                '-timestamp').first()
 
-            new_datum.full_clean()
-            new_datum.save()
+            # if the difference from last logged value exceeds hysteresis, or last log happened sufficiently long ago
+            if abs(datum['value'] - most_recent_reading.value) > data_update_hysteresis[datum['type']] \
+                    and timestamp > (
+                    most_recent_reading.timestamp + timedelta(minutes=different_value_update_lockout_minutes)) \
+                    or timestamp > (
+                    most_recent_reading.timestamp + timedelta(minutes=similar_value_update_lockout_minutes)):
+                # log the datum
+                new_datum = SensorDatum(
+                    submission_ip=submission_ip,
+                    timestamp=timestamp,
+                    value=datum['value'],
+                    sensor_id=sensor.pk,
+                    type_id=DatumType.objects.get(description=datum['type']).pk,
+                )
 
-            context['response'] += f'Successfully logged {str(new_datum)}<br>'
+                new_datum.full_clean()
+                new_datum.save()
+
+                context['response'] += f'Successfully logged {str(new_datum)}<br>'
+            else:
+                context['success'] = False
+                context['response'] += 'Datum ignored: Value similar to recently-logged previous datum.<br>'
 
         except ValidationError:
             context['success'] = False

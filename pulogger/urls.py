@@ -25,5 +25,5 @@ urlpatterns = [
     path('getHistory/', views.get_history, name='gethistory'),
     path('requestServerTime/', views.request_server_time, name='requestservertime'),
     path('submitdata/', views.submit_data, name='submitdata'),
-    path('', views.index, name='index')
+    # path('', views.index, name='index')
 ]

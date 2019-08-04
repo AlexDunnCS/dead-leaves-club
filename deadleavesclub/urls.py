@@ -20,7 +20,6 @@ from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
-    path('', include('pulogger.urls')),
     path('pulogger/', include('pulogger.urls', namespace='pulogger')),
     path('admin/', admin.site.urls)
 ]

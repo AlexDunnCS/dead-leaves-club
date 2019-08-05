@@ -1,0 +1,15 @@
+{% extends 'global/site-template.html' %}
+
+{% load static %}
+
+{% block head_includes %}
+    <link rel="stylesheet" href= {% static "css/user_landing_page.css" %}>
+{% endblock %}
+
+{% block html_title %}Dead Leaves Club{% endblock %}
+
+{% block page_content %}
+    logged in as {{ user }}!
+
+    <a href="logout">Log Out</a>
+{% endblock %}

@@ -1,0 +1,13 @@
+Django==2.2.3
+django-bootstrap4==0.0.8
+django-crispy-forms==1.7.2
+django-icons==0.2.1
+mysql-connector-python==8.0.16
+protobuf==3.7.1
+pytz==2019.1
+six==1.12.0
+sqlparse==0.3.0
+
+# install local version of mysqlclient
+./wheels/mysqlclient-1.4.2-cp37-cp37m-win_amd64.whl ; sys_platform == "win32" and (platform_machine == "AMD64" or platform_machine == "x86_64")
+./wheels/mysqlclient-1.4.2-cp37-cp37m-win32.whl ; sys_platform == "win32" and (platform_machine == "i386" or platform_machine == "x86")

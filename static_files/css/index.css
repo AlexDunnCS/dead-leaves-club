@@ -71,3 +71,7 @@ input:focus {
 
 /* Original template credit */
 /* Made with love by Mutiullah Samim*/
+
+.error-text {
+    color: red;
+}

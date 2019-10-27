@@ -42,19 +42,19 @@ def get_filter_start_time(request):  # todo: remove these filters - they aren't 
     if 'timeFilter' in request.GET:
         filter_type = request.GET['timeFilter']
         if filter_type == 'lastHour':
-            filter_start_time = datetime.now() - timedelta(hours=1)
+            filter_start_time = datetime.now(tz=timezone.utc) - timedelta(hours=1)
         elif filter_type == 'lastDay':
-            filter_start_time = datetime.now() - timedelta(hours=24)
+            filter_start_time = datetime.now(tz=timezone.utc) - timedelta(hours=24)
         elif filter_type == 'lastWeek':
-            filter_start_time = datetime.now() - timedelta(days=7)
+            filter_start_time = datetime.now(tz=timezone.utc) - timedelta(days=7)
         elif filter_type == 'lastMonth':
-            filter_start_time = datetime.now() - timedelta(days=30)
+            filter_start_time = datetime.now(tz=timezone.utc) - timedelta(days=30)
         elif filter_type == 'customRange':
             filter_start_time = parse_uri_datetime(request.GET['from'])
         else:
-            filter_start_time = datetime.now() - timedelta(days=1)
+            filter_start_time = datetime.now(tz=timezone.utc) - timedelta(days=1)
     else:
-        filter_start_time = datetime.now() - timedelta(days=1)
+        filter_start_time = datetime.now(tz=timezone.utc) - timedelta(days=1)
     return filter_start_time
 
 
@@ -62,7 +62,7 @@ def get_filter_end_time(request):
     if 'timeFilter' in request.GET and request.GET['timeFilter'] == 'customRange':
         filter_end_time = parse_uri_datetime(request.GET['to'])
     else:
-        filter_end_time = datetime.now()
+        filter_end_time = datetime.now(tz=timezone.utc)
 
     return filter_end_time
 

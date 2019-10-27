@@ -38,7 +38,7 @@ def datetime_to_sql_format(datetime_obj):
     return sql_datetime_str
 
 
-def get_filter_start_time(request):
+def get_filter_start_time(request):  # todo: remove these filters - they aren't very useful
     if 'timeFilter' in request.GET:
         filter_type = request.GET['timeFilter']
         if filter_type == 'lastHour':
@@ -67,54 +67,22 @@ def get_filter_end_time(request):
     return filter_end_time
 
 
-# def prepare_data_as_csv(data, column_headers=('timestamp', 'temperature', 'relative_humidity')):
-#     csv_header = ','.join(column_headers) + '\n'
-#
-#     csv_data = list(data)
-#     for idx, row in enumerate(csv_data):
-#         row[0] = row[0].strftime('%Y-%m-%d %H:%M:%S')
-#         csv_data[idx] = ','.join(str(x) for x in row)
-#
-#     csv_data = '\n'.join(csv_data)
+# def prepare_data_as_csv(readings):
+#     column_headings = get_column_headings(readings)
+#     csv_header = ','.join(column_headings) + '\n'
+#     csv_data = '\n'.join(reading_to_csv_row(reading, column_headings) for reading in readings)
 #
 #     return csv_header + csv_data
 
-def prepare_data_as_csv(readings):
-    column_headings = get_column_headings(readings)
-    csv_header = ','.join(column_headings) + '\n'
-    csv_data = '\n'.join(reading_to_csv_row(reading, column_headings) for reading in readings)
 
-    return csv_header + csv_data
-
-
-def get_column_headings(readings):
-    column_headings = ['timestamp']
-
-    for column_heading in ('ch1_temp', 'ch1_humidity', 'ch2_temp', 'ch2_humidity'):
-        try:
-            column_headings.append(column_heading)
-        except AttributeError:
-            pass
-
-    return column_headings
-
-
-def reading_to_csv_row(reading, columns):
-    return ','.join(str(reading[column]) for column in columns)
+# def reading_to_csv_row(reading, columns):
+#     return ','.join(str(reading[column]) for column in columns)
 
 
 def prepare_data_for_canvasjs(trace_data):
-    # columns = get_column_headings(data)
-    # column_labels = [get_column_label(heading) for heading in columns]
-    # column_types = [get_column_type(heading) for heading in columns]
-    # data_lists = get_data_lists(data)
-
     trace_pyjsons = []
 
     for trace in trace_data:
-        # if len(data_lists[idx]):
-        # column_label = column_labels[idx]
-        # column_type = column_types[idx]
 
         if trace['type'] == 'temperature':
             line_color = 'IndianRed'
@@ -152,34 +120,15 @@ def prepare_data_for_canvasjs(trace_data):
     return trace_json
 
 
-def get_column_label(column):
-    channel_str = column.split('_')[0]  # Assumes column of form 'ch0_type'
-
-    label_mappings = {'timestamp': 'Timestamp', 'temp': f'{channel_str} Temperature',
-                      'humidity': f'{channel_str} Humidity'}
-    for key, value in label_mappings.items():
-        if key in column:
-            return value
-    raise ValueError(f'Cannot get label for unknown column "{column}"')
-
-
-def get_column_type(column):
-    type_mappings = {'timestamp': 'timestamp', 'temp': 'temperature', 'humidity': 'humidity'}
-    for key, value in type_mappings.items():
-        if key in column:
-            return value
-    raise ValueError(f'Cannot get type for unknown column "{column}"')
-
-
 def get_data_lists(raw_data):
-    type_mappings = ('none', 'temperature', 'humidity')
+    type_mappings = ('none', 'temperature', 'humidity')  # todo: generate type mappings dynamically
     data_lists = []
     data_lists_by_sensorid = {}
 
     for datum in raw_data:
         if datum['unique_sensor_name'] not in data_lists_by_sensorid:
             data_lists.append(
-                get_structured_data_object(datum, type_mappings))  # todo: generate type mappings dynamically
+                get_structured_data_object(datum, type_mappings))
             data_lists_by_sensorid.update({datum['unique_sensor_name']: data_lists[-1]})
 
         data_lists_by_sensorid[datum['unique_sensor_name']]['data'].append({  # todo: turn datalist into a class
@@ -205,7 +154,8 @@ def get_structured_data_object(datum, type_mappings):
         'data': []
     }
 
-def get_history(request):
+
+def get_history(request):  # todo: move all the get_data_lists() logic to the models where it belongs
     device_name = request.GET['device']
     client_tz_offset = request.GET['clientTzOffset']
 
@@ -216,39 +166,7 @@ def get_history(request):
     history_start = datetime_range['from'] + timedelta(minutes=int(client_tz_offset))
     history_end = datetime_range['to'] + timedelta(minutes=int(client_tz_offset))
 
-    # history_start = datetime.now() - timedelta(days=1)
-    # history_end = datetime.now()
-
     requested_format = 'canvas_js' if 'format' not in request.GET else request.GET['format']
-
-    device = Datalogger.objects.get(device_name=device_name)
-
-    # Get sensors attached to device, along with models and datum-types a sensor provides
-    sensors = Sensor.objects.filter(datalogger=device).order_by('pk').select_related('type')
-    sensor_models = sensors.values_list('type', flat=True)  # get all models of sensor used by this controller
-    sensor_model_datum_types = list(SensorModelDatumType.objects.filter(sensor__in=sensor_models).order_by('sensor',
-                                                                                                           'datum_type'))  # get all datatypes relating to all models of sensor used
-
-    # assign each trace (sensor/datum_type combination) an index for the tuples (zero is used for time/x-axis)
-    chart_traces = []
-    chart_trace_indices = {}
-    next_free_idx = 1
-    for sensor in sensors:
-        for sensor_model_datum_type in sensor_model_datum_types:
-            if sensor_model_datum_type.sensor == sensor.type:
-                chart_trace_name = get_chart_trace_name(sensor.sensor_name,
-                                                        sensor_model_datum_type.datum_type.description)
-                chart_traces.append(
-                    {'sensor': sensor.sensor_name, 'datum_type': sensor_model_datum_type.datum_type.description,
-                     'chart_trace_name': chart_trace_name})
-                chart_trace_indices.update(
-                    {get_chart_trace_id(sensor.id, sensor_model_datum_type.datum_type_id): next_free_idx})
-                next_free_idx += 1
-
-    # # Get all data for the selected device during the given period
-    # bulk_queryset = SensorDatum.objects.filter(sensor__datalogger__device_name=device_name,
-    #                                            timestamp__gte=get_filter_start_time(request),
-    #                                            timestamp__lte=get_filter_end_time(request))
 
     # Downsample the queryset to avoid long fetch and page-load times
     downsampled_queryset = downsample(
@@ -257,98 +175,17 @@ def get_history(request):
                                    timestamp__lte=history_end)
     ).order_by('timestamp', 'sensor_id', 'type_id')
 
-    # Process data into timestamp-grouped tuples accessible by chart_trace_index ([0] is timestamp)
-    raw_data = downsampled_queryset.values()
-    # structured_data = get_data_lists(raw_data)
-
-    # # Add all the data to the prepared-data list
-    # for datum in raw_data:
-    #     # If it's necessary to create a new tuple, create it, with None-valued placeholders for each value
-    #     # Assumes any values within 1 second of each other are functionally at the same time
-    #     if len(structured_data) == 0 or abs(datum['timestamp'] - structured_data[-1][0]) > timedelta(seconds=1):
-    #         structured_data.append([datum['timestamp']])
-    #         structured_data[-1].extend([None] * len(chart_traces))
-    #
-    #     # Store the datum in the appropriate element of the most-recent tuple
-    #     structured_data[-1][chart_trace_indices[get_chart_trace_id(datum['sensor_id'], datum['type_id'])]] = datum[
-    #         'value']
-    #
-    # # Construct a list of column labels based on the sensor name and value type (temp, humidity)
-    # column_labels = ['Time']
-    # column_types = ["datetime"]
-    # for chart_trace in chart_traces:
-    #     column_labels.append(chart_trace['chart_trace_name'])
-    #     column_types.append(chart_trace['datum_type'])
-
     if requested_format == 'csv':
-        response_str = prepare_data_as_csv(get_data_lists(raw_data))
+        # response_str = prepare_data_as_csv(get_data_lists(raw_data))
+        return HttpResponse('CSV Export Temporarily Deprecated')
     elif requested_format == 'canvas_js':
-        response_str = prepare_data_for_canvasjs(get_data_lists(raw_data))
+        return HttpResponse(prepare_data_for_canvasjs(get_data_lists(downsampled_queryset.values())))
     else:
-        response_str = {'invalid request format'}
-
-    return HttpResponse(response_str)
+        return HttpResponse('invalid request format')
 
 
 def request_server_time(request):
     return HttpResponse(str(datetime.utcnow().timestamp()).split('.')[0])
-
-
-#
-# def prepare_data_for_canvasjs(column_labels, column_types, data):
-#     trace_jsons = []
-#
-#     for idx, column_label in enumerate(column_labels[1:], start=1):
-#         column_type = column_types[idx]
-#         if column_type == 'temperature':
-#             line_color = 'IndianRed'
-#             axis_y_type = 'primary'
-#             x_value_format_string = 'YYYY-MM-DD HH:mm:ss'
-#             y_value_format_string = '#.#°C'
-#         elif column_type == 'humidity':
-#             line_color = 'CadetBlue'
-#             axis_y_type = 'secondary'
-#             x_value_format_string = 'YYYY-MM-DD HH:mm:ss'
-#             y_value_format_string = "#'%'"
-#         else:
-#             line_color = 'Black'
-#             axis_y_type = 'primary'
-#             x_value_format_string = 'YYYY-MM-DD HH:mm:ss'
-#             y_value_format_string = '#'
-#
-#         # Add the trace definition
-#         trace_jsons.append(f'''
-# {{
-#     "type":"line",
-#     "color":"{line_color}",
-#     "axisYType": "{axis_y_type}",
-#     "name": "{column_label}",
-#     "showInLegend": true,
-#     "markerSize": 0,
-#     "xValueFormatString": "{x_value_format_string}",
-#     "yValueFormatString": "{y_value_format_string}",
-#     "xValueType": "dateTime",
-#     "dataPoints": [''')
-#
-#     for row_idx, row in enumerate(data):
-#         # For every datum index in every data row
-#         for trace_data_idx, trace_datum in enumerate(row[1:], start=1):
-#             trace_json_idx = trace_data_idx - 1
-#
-#             # If the datum has a value
-#             if row[trace_data_idx] != None:
-#                 # If it's not the first datum for a given trace, insert a comma
-#                 if not trace_jsons[trace_json_idx].endswith('['):
-#                     trace_jsons[trace_json_idx] += ','
-#                 # then add the datum
-#                 trace_jsons[trace_json_idx] += f'''{{ "x": {datetime_to_js_epoch(row[0])}, "y": {row[
-#                     trace_data_idx]} }}'''
-#
-#     trace_jsons = [json + ']}\n' for json in trace_jsons]
-#
-#     prepared_json = '[' + ','.join(trace_jsons) + '\n]'
-#
-#     return prepared_json
 
 
 def utc_to_local(utc_dt):
@@ -408,7 +245,7 @@ data_update_hysteresis = {
 }
 
 
-def submit_data(request):
+def submit_data(request):  # todo: refactor this fat-ass view
     device = request.GET['device']
     sensor_names = request.GET['sensors'].split(',')
     datum_types = request.GET['types'].split(',')

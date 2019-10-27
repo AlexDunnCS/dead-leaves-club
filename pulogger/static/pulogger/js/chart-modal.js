@@ -120,12 +120,14 @@ function renderChart(context, dataJson) {
             prefix: "",
             suffix: "°C",
             maximum: 34,
-            minimum: 16
+            minimum: 24
         },
         axisY2: {
             title: "Relative Humidity",
             prefix: "",
-            suffix: "%"
+            suffix: "%",
+            maximum: 75,
+            minimum: 25
         },
         toolTip: {
             shared: true

@@ -18,7 +18,7 @@ class DataTypeMismatchError(Exception):
 
 def parse_uri_datetime(ms_since_epoch):
     ts_epoch = int(ms_since_epoch) / 1000
-    return datetime.fromtimestamp(ts_epoch)
+    return datetime.fromtimestamp(ts_epoch, tz=timezone.utc)
 
 
 def datetime_to_js_epoch(dt):
@@ -120,21 +120,43 @@ def prepare_data_for_canvasjs(trace_data):
     return trace_json
 
 
-def get_data_lists(raw_data):
-    type_mappings = ('none', 'temperature', 'humidity')  # todo: generate type mappings dynamically
+def get_data_lists(raw_data, smoothing=False):
+    def is_not_outlier(datum, data_lists_by_sensorid):
+
+        if not smoothing:
+            return True
+
+        datum_stale_time = timedelta(hours=6)
+        thresholds = {
+            'temperature': 0.2,
+            'humidity': 1.0,
+        }
+
+        try:
+            previous_valid_timestamp = parse_uri_datetime(
+                data_lists_by_sensorid[datum['unique_sensor_name']]['data'][-1]['x'])
+            previous_valid_value = data_lists_by_sensorid[datum['unique_sensor_name']]['data'][-1]['y']
+            is_outlier = abs(previous_valid_value - json_safe(datum['value'])) > thresholds[
+                get_type_mappings()[datum['type_id']]]
+            previous_value_is_old = datum['timestamp'] - previous_valid_timestamp > datum_stale_time
+            return (not is_outlier) or previous_value_is_old
+        except IndexError:
+            return True
+
     data_lists = []
     data_lists_by_sensorid = {}
 
     for datum in raw_data:
         if datum['unique_sensor_name'] not in data_lists_by_sensorid:
             data_lists.append(
-                get_structured_data_object(datum, type_mappings))
+                get_structured_data_object(datum, get_type_mappings()))
             data_lists_by_sensorid.update({datum['unique_sensor_name']: data_lists[-1]})
 
-        data_lists_by_sensorid[datum['unique_sensor_name']]['data'].append({  # todo: turn datalist into a class
-            'x': datetime_to_js_epoch(datum['timestamp']),
-            'y': json_safe(datum['value'])
-        })
+        if is_not_outlier(datum, data_lists_by_sensorid):
+            data_lists_by_sensorid[datum['unique_sensor_name']]['data'].append({  # todo: turn datalist into a class
+                'x': datetime_to_js_epoch(datum['timestamp']),
+                'y': json_safe(datum['value'])
+            })
 
     return data_lists
 
@@ -145,6 +167,10 @@ def json_safe(object):
         return float(object)
     else:
         return object
+
+
+def get_type_mappings():
+    return ('none', 'temperature', 'humidity')  # todo: generate type mappings dynamically
 
 
 def get_structured_data_object(datum, type_mappings):
@@ -165,6 +191,7 @@ def get_history(request):  # todo: move all the get_data_lists() logic to the mo
 
     history_start = datetime_range['from'] + timedelta(minutes=int(client_tz_offset))
     history_end = datetime_range['to'] + timedelta(minutes=int(client_tz_offset))
+    history_duration = history_end - history_start
 
     requested_format = 'canvas_js' if 'format' not in request.GET else request.GET['format']
 
@@ -179,7 +206,8 @@ def get_history(request):  # todo: move all the get_data_lists() logic to the mo
         # response_str = prepare_data_as_csv(get_data_lists(raw_data))
         return HttpResponse('CSV Export Temporarily Deprecated')
     elif requested_format == 'canvas_js':
-        return HttpResponse(prepare_data_for_canvasjs(get_data_lists(downsampled_queryset.values())))
+        smoothing = True if history_duration > timedelta(days=3) else False
+        return HttpResponse(prepare_data_for_canvasjs(get_data_lists(downsampled_queryset.values(), smoothing)))
     else:
         return HttpResponse('invalid request format')
 

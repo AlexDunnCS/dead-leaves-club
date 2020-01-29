@@ -106,6 +106,36 @@ function getHistoricalDeviceReadings(context, callback) {
 }
 
 function renderChart(context, dataJson) {
+    let minimumTemperature = 100;
+    let maximumTemperature = 0;
+    let minimumHumidity = 100;
+    let maximumHumidity = 0;
+
+    for (const _trace in dataJson) {
+        const trace = dataJson[_trace];
+        for (const _datum in trace.dataPoints) {
+            let datum = trace.dataPoints[_datum];
+            if (trace.dataPointsType === 'temperature') {
+                if (datum.y > maximumTemperature) {
+                    maximumTemperature = datum.y
+                }
+
+                if (datum.y < minimumTemperature) {
+                    minimumTemperature = datum.y
+                }
+            }
+            else if (trace.dataPointsType === 'humidity') {
+                if (datum.y > maximumHumidity) {
+                    maximumHumidity = datum.y
+                }
+
+                if (datum.y < minimumHumidity) {
+                    minimumHumidity = datum.y
+                }
+            }
+        }
+    }
+
     var chart = new CanvasJS.Chart("chartContainer", {
         theme: "light1", // "light2", "dark1", "dark2"
         animationEnabled: true, // change to true
@@ -119,15 +149,15 @@ function renderChart(context, dataJson) {
             title: "Temperature",
             prefix: "",
             suffix: "°C",
-            maximum: 34,
-            minimum: 24
+            maximum: Math.max(34, maximumTemperature + 0.5),
+            minimum: Math.min(24, minimumTemperature - 0.5)
         },
         axisY2: {
             title: "Relative Humidity",
             prefix: "",
             suffix: "%",
-            maximum: 75,
-            minimum: 25
+            maximum: Math.max(75, maximumHumidity + 2),
+            minimum: Math.min(25, minimumHumidity - 2)
         },
         toolTip: {
             shared: true

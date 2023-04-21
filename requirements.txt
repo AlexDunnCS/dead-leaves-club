@@ -5,7 +5,7 @@ mysql-connector-python==8.0.16
 protobuf==3.7.1
 pytz==2019.1
 six==1.12.0
-sqlparse==0.3.0
+sqlparse==0.4.4
 
 # necessary(?) installs for production hosting
 mysqlclient>=1.4 ; sys_platform == 'linux'
